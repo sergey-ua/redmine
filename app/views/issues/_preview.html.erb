@@ -1,0 +1,49 @@
+<div class="issue-preview-header">
+  <div class="contextual">
+    <%= link_to l(:label_open_in_full_view), issue_path(@issue), :class => 'issue-preview-full-link' %>
+    <%= link_to sprite_icon('close', l(:button_close)), '#',
+                :class => 'icon icon-close issue-preview-close',
+                :title => l(:button_close),
+                :data => {:action => 'issue-preview#close'} %>
+  </div>
+  <h3><%= link_to issue_heading(@issue), issue_path(@issue) %></h3>
+  <p class="subject"><%= @issue.subject %></p>
+</div>
+
+<div class="issue-preview-summary">
+  <table class="attributes">
+    <tr>
+      <th class="project"><%= l(:field_project) %></th>
+      <td class="project"><%= link_to_project(@issue.project) %></td>
+    </tr>
+    <tr>
+      <th class="tracker"><%= l(:field_tracker) %></th>
+      <td class="tracker"><%= @issue.tracker.name %></td>
+    </tr>
+    <tr>
+      <th class="status"><%= l(:field_status) %></th>
+      <td class="status"><%= @issue.status.name %></td>
+    </tr>
+    <tr>
+      <th class="priority"><%= l(:field_priority) %></th>
+      <td class="priority"><%= @issue.priority.name %></td>
+    </tr>
+    <tr>
+      <th class="assigned-to"><%= l(:field_assigned_to) %></th>
+      <td class="assigned-to">
+        <%= @issue.assigned_to ? link_to_user(@issue.assigned_to) : l(:label_unassigned) %>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="issue-preview-description">
+  <p><strong><%= l(:field_description) %></strong></p>
+  <% if @issue.description? %>
+    <div class="wiki">
+      <%= textilizable @issue, :description, :attachments => @issue.attachments %>
+    </div>
+  <% else %>
+    <p class="nodata"><%= l(:label_no_description) %></p>
+  <% end %>
+</div>

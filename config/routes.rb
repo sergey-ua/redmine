@@ -240,6 +240,9 @@ Rails.application.routes.draw do
       # Used when updating the form of an existing issue
       patch 'edit', :to => 'issues#edit'
       get 'tab/:name', :action => 'issue_tab', :as => 'tab'
+      # Named 'preview_fragment' because 'preview_issue' is already taken by
+      # the markup preview route (previews#issue) declared earlier in this file.
+      get 'preview', :as => 'preview_fragment'
     end
     collection do
       match 'bulk_edit', :via => [:get, :post]

@@ -37,6 +37,7 @@ class RoutingIssuesTest < Redmine::RoutingTest
     should_route 'DELETE /issues/64' => 'issues#destroy', :id => '64'
 
     should_route "GET /issues/3/tab/time_entries" => 'issues#issue_tab', :id => '3', :name => 'time_entries'
+    should_route "GET /issues/3/preview" => 'issues#preview', :id => '3'
   end
 
   def test_issues_bulk_edit

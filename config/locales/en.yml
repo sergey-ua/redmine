@@ -736,6 +736,7 @@ en:
   label_attribute: Attribute
   label_attribute_plural: Attributes
   label_no_data: No data to display
+  label_no_description: No description
   label_no_preview: No preview available
   label_no_preview_alternative_html: No preview available. %{link} the file instead.
   label_no_preview_download: Download
@@ -799,6 +800,7 @@ en:
   label_absolute: Absolute
   label_relative: Relative
   label_nobody: nobody
+  label_unassigned: Unassigned
   label_next: Next
   label_previous: Previous
   label_show_more: Show more

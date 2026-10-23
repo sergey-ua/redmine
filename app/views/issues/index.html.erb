@@ -30,8 +30,15 @@
 <p class="nodata"><%= l(:label_no_data) %></p>
 <% else %>
 <%= render_query_totals(@query) %>
-<%= render :partial => 'issues/list', :locals => {:issues => @issues, :query => @query} %>
-<span class="pagination"><%= pagination_links_full @issue_pages, @issue_count %></span>
+<div data-controller="issue-preview">
+  <%= render :partial => 'issues/list',
+             :locals => {:issues => @issues, :query => @query,
+                         :query_options => {:preview => true}} %>
+  <span class="pagination"><%= pagination_links_full @issue_pages, @issue_count %></span>
+  <div id="issue-preview-panel" class="hidden" data-issue-preview-target="panel">
+    <div id="issue-preview-content" data-issue-preview-target="content"></div>
+  </div>
+</div>
 <% end %>
 
 <% export_allowed = export_allowed?(:export_issues, @query.base_scope) %>

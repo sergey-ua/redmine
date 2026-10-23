@@ -55,7 +55,7 @@ module Redmine
 
         map.project_module :issue_tracking do |map|
           # Issues
-          map.permission :view_issues, {:issues => [:index, :show, :issue_tab],
+          map.permission :view_issues, {:issues => [:index, :show, :issue_tab, :preview],
                                         :auto_complete => [:issues],
                                         :context_menus => [:issues],
                                         :versions => [:index, :show, :status_by],
