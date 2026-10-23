@@ -273,6 +273,39 @@ not enter any of those paths.
 - **THEN** it appears in no CSV header or cell, consumes no PDF table width, cannot be selected into a
   saved query's `column_names`, and needs no handling for existing saved queries
 
+### Requirement: Decisions a person confirmed about the read-only preview endpoint
+These three points were asked as a decision batch on the ticket and answered by a person on
+2026-10-23 (`Q1 A, Q2 A, Q3 A`). A read-only preview endpoint added to this domain SHALL follow them.
+
+#### Scenario: the preview action is registered under the existing `:view_issues` permission
+- **WHEN** a read-only preview action is added to `IssuesController`
+- **THEN** its name SHALL also be added to the `:issues` action list of `map.permission :view_issues`
+  in `lib/redmine/preparation.rb:56-58`, alongside `:index`, `:show` and `:issue_tab`
+- **AND** it SHALL NOT be given a permission of its own, so no existing role has to be edited and no
+  new user-visible permission setting appears
+- **AND** the endpoint is therefore reachable by anyone who may view issues, honours the
+  `issue_tracking` module and works on closed projects (`:read => true`), exactly like `issue_tab`
+- **AND** without that registration the endpoint would be denied for every user including
+  administrators, as the access-control requirement above states
+
+#### Scenario: the action is named `preview`
+- **WHEN** the action and its member route are named
+- **THEN** the name SHALL be `preview`, giving `GET /issues/:id/preview`, matching the name of the
+  feature in the interface
+- **AND** the two recorded overlaps are accepted as naming hazards rather than defects: the id-less
+  `GET /issues/preview` → `previews#issue` route does not collide, and the `{{thumbnail}}` macro's
+  `action_name == 'preview'` branch is inert because the action has no `find_attachments` filter and so
+  no `@attachments`
+
+#### Scenario: the preview endpoint serves any GET, with no XHR gate
+- **WHEN** a non-XHR `GET /issues/:id/preview` arrives
+- **THEN** the fragment SHALL be rendered, not refused — `issue_tab`'s `request.xhr?` / 422 gate
+  (`app/controllers/issues_controller.rb:258`) SHALL NOT be copied
+- **AND** the endpoint stays directly openable and linkable for debugging, while the `find_issue`
+  visibility check and the `authorize` permission check still apply in full
+- **AND** this is safe because the request is a plain GET with no side effects and the response is a
+  bare layout-less fragment, so the gate would not be a security control
+
 ## Code map
 - `app/controllers/issues_controller.rb`: the issues controller; declares the `find_issue` and
   `authorize` filter lists and holds `show` and the read-only `issue_tab` fragment action.
