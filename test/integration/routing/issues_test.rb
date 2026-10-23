@@ -40,6 +40,10 @@ class RoutingIssuesTest < Redmine::RoutingTest
     should_route "GET /issues/3/preview" => 'issues#preview', :id => '3'
   end
 
+  def test_issue_preview_fragment_named_path_helper
+    assert_equal '/issues/3/preview', preview_fragment_issue_path(3)
+  end
+
   def test_issues_bulk_edit
     should_route 'GET /issues/bulk_edit' => 'issues#bulk_edit'
     should_route 'POST /issues/bulk_edit' => 'issues#bulk_edit' # For updating the bulk edit form

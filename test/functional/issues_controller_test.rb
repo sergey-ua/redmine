@@ -9507,6 +9507,61 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_select 'table.issues thead th.preview', :text => ''
   end
 
+  def test_index_global_list_should_render_one_preview_link_per_row
+    @request.session[:user_id] = 2
+
+    get(:index)
+    assert_response :success
+
+    rows = css_select('table.issues tbody tr.hascontextmenu')
+    assert rows.any?
+    assert_select 'table.issues tbody tr.hascontextmenu td.preview a', rows.size
+    assert_select 'table.issues thead th.preview', 1
+  end
+
+  def test_index_preview_cell_should_be_hidden_when_printing
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1})
+    assert_response :success
+    assert_select 'table.issues thead th.preview.hide-when-print', 1
+    assert_select 'table.issues tbody td.preview.hide-when-print' do
+      assert_select 'a', :text => l(:label_preview)
+    end
+  end
+
+  def test_index_grouped_group_row_should_span_the_preview_cell
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1, :query_id => 6})
+    assert_response :success
+
+    expected = css_select('table.issues thead th').size
+    assert_select 'tr.group td' do |tds|
+      assert tds.any?
+      tds.each {|td| assert_equal expected.to_s, td['colspan']}
+    end
+  end
+
+  def test_index_preview_panel_container_should_be_present_on_the_list
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1})
+    assert_response :success
+    assert_select 'div[data-controller=?]', 'issue-preview'
+    assert_select 'div#issue-preview-panel.hidden[data-issue-preview-target=?]', 'panel' do
+      assert_select 'div#issue-preview-content[data-issue-preview-target=?]', 'content'
+    end
+  end
+
+  def test_preview_should_be_served_for_a_non_xhr_get
+    @request.session[:user_id] = 2
+
+    get(:preview, :params => {:id => 1})
+    assert_response :success
+    assert_select 'div.issue-preview-summary'
+  end
+
   def test_index_csv_should_not_include_a_preview_column
     @request.session[:user_id] = 2
     with_settings :default_language => 'en' do

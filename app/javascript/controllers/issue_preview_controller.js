@@ -18,7 +18,12 @@ export default class extends Controller {
     const url = event.currentTarget.getAttribute("href")
     if (!url) return
 
-    const response = await get(url, { responseKind: "html" })
+    let response
+    try {
+      response = await get(url, { responseKind: "html" })
+    } catch {
+      return
+    }
     if (!response.ok) return
 
     this.contentTarget.innerHTML = await response.html
