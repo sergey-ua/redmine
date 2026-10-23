@@ -1459,7 +1459,7 @@ class IssuesControllerTest < Redmine::ControllerTest
 
     # query should use specified columns + id and checkbox
     assert_select 'table.issues thead' do
-      assert_select 'th', columns.size + 2
+      assert_select 'th', columns.size + 3
       assert_select 'th.tracker'
       assert_select 'th.subject'
       assert_select 'th.assigned_to'
@@ -1755,8 +1755,8 @@ class IssuesControllerTest < Redmine::ControllerTest
         :c => %w(subject description)
       }
     )
-    assert_select 'table.issues thead th', 4 # columns: chekbox + id + subject
-    assert_select 'td.description[colspan="4"]', :text => 'Unable to print recipes'
+    assert_select 'table.issues thead th', 5 # columns: chekbox + id + subject
+    assert_select 'td.description[colspan="5"]', :text => 'Unable to print recipes'
 
     get(
       :index,
@@ -1780,11 +1780,11 @@ class IssuesControllerTest < Redmine::ControllerTest
         }
       )
       assert_response :success
-      assert_select 'table.issues thead th', 4 # columns: chekbox + id + subject
+      assert_select 'table.issues thead th', 5 # columns: chekbox + id + subject
 
-      assert_select 'td.last_notes[colspan="4"]', :text => 'Some notes with Redmine links: #2, r2.'
+      assert_select 'td.last_notes[colspan="5"]', :text => 'Some notes with Redmine links: #2, r2.'
       assert_select(
-        'td.last_notes[colspan="4"]',
+        'td.last_notes[colspan="5"]',
         :text => 'A comment with inline image: and a reference to #1 and r2.'
       )
       get(
@@ -1821,7 +1821,7 @@ class IssuesControllerTest < Redmine::ControllerTest
       }
     )
     assert_response :success
-    assert_select 'td.last_notes[colspan="4"]', :text => 'Privates notes'
+    assert_select 'td.last_notes[colspan="5"]', :text => 'Privates notes'
 
     Role.find(1).remove_permission! :view_private_notes
     get(
@@ -1832,7 +1832,7 @@ class IssuesControllerTest < Redmine::ControllerTest
       }
     )
     assert_response :success
-    assert_select 'td.last_notes[colspan="4"]', :text => 'Public notes'
+    assert_select 'td.last_notes[colspan="5"]', :text => 'Public notes'
   end
 
   def test_index_with_description_and_last_notes_columns_should_display_column_name
@@ -1844,8 +1844,8 @@ class IssuesControllerTest < Redmine::ControllerTest
       }
     )
     assert_response :success
-    assert_select 'td.last_notes[colspan="4"] span', :text => 'Last notes'
-    assert_select 'td.description[colspan="4"] span', :text => 'Description'
+    assert_select 'td.last_notes[colspan="5"] span', :text => 'Last notes'
+    assert_select 'td.description[colspan="5"] span', :text => 'Description'
   end
 
   def test_index_with_full_width_layout_custom_field_column_should_show_column_as_block_column
@@ -1866,7 +1866,7 @@ class IssuesControllerTest < Redmine::ControllerTest
       }
     )
     assert_response :success
-    assert_select 'td.description[colspan="4"] span', :text => 'Description'
+    assert_select 'td.description[colspan="5"] span', :text => 'Description'
     assert_select "td.cf_#{field.id} span", :text => 'Long text'
   end
 
@@ -9395,5 +9395,216 @@ class IssuesControllerTest < Redmine::ControllerTest
       assert_select 'thead.related-issues th', text: 'Status'
       assert_select 'thead.related-issues th', text: 'Total estimated time'
     end
+  end
+
+  def test_preview_should_render_the_issue_fragment_without_layout
+    @request.session[:user_id] = 2
+    issue = Issue.find(2)
+
+    get(:preview, :params => {:id => issue.id})
+    assert_response :success
+    assert_equal 'text/html', @response.media_type
+
+    # a bare fragment: none of the base layout's chrome
+    assert_select 'div#header', 0
+    assert_select 'div#main', 0
+    assert_select 'div#sidebar', 0
+
+    assert_select 'div.issue-preview-header' do
+      assert_select 'a[href=?]', "/issues/#{issue.id}", :text => /#{issue.id}/
+      assert_select 'p.subject', :text => issue.subject
+      assert_select 'a[href=?]', "/issues/#{issue.id}", :text => l(:label_open_in_full_view)
+      assert_select 'a.issue-preview-close'
+    end
+    assert_select 'div.issue-preview-summary' do
+      assert_select 'td.project', :text => issue.project.name
+      assert_select 'td.tracker', :text => issue.tracker.name
+      assert_select 'td.status', :text => issue.status.name
+      assert_select 'td.priority', :text => issue.priority.name
+      assert_select 'td.assigned-to', :text => issue.assigned_to.name
+    end
+    assert_select 'div.issue-preview-description div.wiki', :text => /#{issue.description[0, 20]}/
+  end
+
+  def test_preview_should_render_unassigned_when_issue_has_no_assignee
+    @request.session[:user_id] = 2
+    assert_nil Issue.find(1).assigned_to
+
+    get(:preview, :params => {:id => 1})
+    assert_response :success
+    assert_select 'td.assigned-to', :text => l(:label_unassigned)
+  end
+
+  def test_preview_should_render_no_description_when_description_is_blank
+    @request.session[:user_id] = 2
+    issue = Issue.find(11)
+    assert issue.description.blank?
+    assert_nil issue.assigned_to
+
+    get(:preview, :params => {:id => issue.id})
+    assert_response :success
+    assert_select 'div.issue-preview-description p.nodata', :text => l(:label_no_description)
+    assert_select 'div.issue-preview-description div.wiki', 0
+    assert_select 'td.assigned-to', :text => l(:label_unassigned)
+  end
+
+  def test_preview_should_not_write_anything
+    @request.session[:user_id] = 2
+    issue = Issue.find(2)
+    attributes_before = issue.attributes
+
+    ActionMailer::Base.deliveries.clear
+    assert_no_difference 'Journal.count' do
+      3.times do
+        get(:preview, :params => {:id => issue.id})
+        assert_response :success
+      end
+    end
+    assert_empty ActionMailer::Base.deliveries
+    assert_equal attributes_before, issue.reload.attributes
+  end
+
+  def test_preview_should_redirect_anonymous_user_to_login
+    Role.anonymous.remove_permission!(:view_issues)
+
+    get(:preview, :params => {:id => 1})
+    assert_response :redirect
+  end
+
+  def test_preview_should_deny_user_without_view_issues_permission
+    Role.find(1).remove_permission!(:view_issues)
+    @request.session[:user_id] = 2
+
+    get(:preview, :params => {:id => 1})
+    assert_response :forbidden
+  end
+
+  def test_preview_should_return_404_for_unknown_issue
+    @request.session[:user_id] = 2
+
+    get(:preview, :params => {:id => 999_999})
+    assert_response :not_found
+  end
+
+  def test_preview_action_should_be_registered_in_the_view_issues_action_map
+    # Without this entry the endpoint is denied to everyone, administrators included
+    assert_include(
+      'issues/preview',
+      Redmine::AccessControl.permission(:view_issues).actions
+    )
+  end
+
+  def test_index_should_render_one_preview_link_per_row
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1})
+    assert_response :success
+
+    rows = css_select('table.issues tbody tr.hascontextmenu')
+    assert rows.any?
+    assert_select 'table.issues tbody tr.hascontextmenu td.preview a', rows.size
+    assert_select 'table.issues thead th.preview', 1
+    assert_select 'table.issues thead th.preview', :text => ''
+  end
+
+  def test_index_global_list_should_render_one_preview_link_per_row
+    @request.session[:user_id] = 2
+
+    get(:index)
+    assert_response :success
+
+    rows = css_select('table.issues tbody tr.hascontextmenu')
+    assert rows.any?
+    assert_select 'table.issues tbody tr.hascontextmenu td.preview a', rows.size
+    assert_select 'table.issues thead th.preview', 1
+  end
+
+  def test_index_preview_cell_should_be_hidden_when_printing
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1})
+    assert_response :success
+    assert_select 'table.issues thead th.preview.hide-when-print', 1
+    assert_select 'table.issues tbody td.preview.hide-when-print' do
+      assert_select 'a', :text => l(:label_preview)
+    end
+  end
+
+  def test_index_grouped_group_row_should_span_the_preview_cell
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1, :query_id => 6})
+    assert_response :success
+
+    expected = css_select('table.issues thead th').size
+    assert_select 'tr.group td' do |tds|
+      assert tds.any?
+      tds.each {|td| assert_equal expected.to_s, td['colspan']}
+    end
+  end
+
+  def test_index_preview_panel_container_should_be_present_on_the_list
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1})
+    assert_response :success
+    assert_select 'div[data-controller=?]', 'issue-preview'
+    assert_select 'div#issue-preview-panel.hidden[data-issue-preview-target=?]', 'panel' do
+      assert_select 'div#issue-preview-content[data-issue-preview-target=?]', 'content'
+    end
+  end
+
+  def test_preview_should_be_served_for_a_non_xhr_get
+    @request.session[:user_id] = 2
+
+    get(:preview, :params => {:id => 1})
+    assert_response :success
+    assert_select 'div.issue-preview-summary'
+  end
+
+  def test_index_csv_should_not_include_a_preview_column
+    @request.session[:user_id] = 2
+    with_settings :default_language => 'en' do
+      get(:index, :params => {:project_id => 1, :format => 'csv'})
+      assert_response :success
+      assert_equal 'text/csv; header=present', @response.media_type
+
+      headers = @response.body.chomp.split("\n").first.split(',')
+      assert_not_include 'Preview', headers
+      assert_equal Issue.find(1).project.issues.visible.to_a.any?, true
+    end
+  end
+
+  def test_index_pdf_export_should_still_succeed_with_the_preview_cell
+    @request.session[:user_id] = 2
+    with_settings :default_language => 'en' do
+      get(:index, :params => {:project_id => 1, :format => 'pdf'})
+      assert_response :success
+      assert_equal 'application/pdf', @response.media_type
+      assert @response.body.starts_with?('%PDF')
+    end
+  end
+
+  def test_column_selection_should_offer_no_preview_option
+    @request.session[:user_id] = 2
+
+    get(:index, :params => {:project_id => 1})
+    assert_response :success
+    assert_select 'select#available_c option[value=preview]', 0
+    assert_select 'option[value=preview]', 0
+  end
+
+  def test_loading_a_saved_query_should_not_change_its_column_names
+    @request.session[:user_id] = 2
+    query = IssueQuery.find(5)
+    query.update!(:column_names => [:tracker, :subject, :status])
+    columns_before = IssueQuery.find(5).columns.map(&:name)
+
+    get(:index, :params => {:project_id => 1, :query_id => 5})
+    assert_response :success
+
+    assert_equal columns_before, IssueQuery.find(5).columns.map(&:name)
+    assert_not_include :preview, columns_before
+    assert_not_include 'preview', (session[:issue_query][:column_names] || []).map(&:to_s)
   end
 end

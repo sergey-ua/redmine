@@ -1,0 +1,68 @@
+schema: spec-driven
+
+context: |
+  Redmine — project management web application (README.rdoc).
+
+  Tech stack (Gemfile, .rubocop.yml, package.json):
+  - Ruby >= 3.3.0, < 4.1.0; Rails 8.1.4. RuboCop targets Ruby 3.3 / Rails 8.1.
+  - Front end: importmap-rails ~> 2.0, stimulus-rails ~> 1.3, requestjs-rails ~> 0.0.13.
+    No bundler; JS is served from app/javascript via importmap. Node is used only for stylelint.
+  - Databases exercised in CI: PostgreSQL 14, MySQL 8.4, SQLite3.
+
+  Layout (one line each):
+  - app/controllers — Rails controllers; ApplicationController holds the shared before_action
+    filters (find_issue, authorize, find_optional_project).
+  - app/models — ActiveRecord models (Issue, Project, User, Query/IssueQuery, Journal).
+  - app/views — ERB templates and partials, one folder per controller.
+  - app/helpers — view helpers, incl. ApplicationHelper#textilizable (wiki/Textile rendering).
+  - app/javascript/controllers — Stimulus controllers, auto-registered by filename via
+    eagerLoadControllersFrom in index.js.
+  - app/assets/stylesheets — plain CSS (application.css, responsive.css).
+  - config — routes.rb and config/locales/*.yml (en.yml is the reference locale).
+  - lib/redmine — core library code (export, helpers, plugin API); plugins/ — optional plugins.
+  - test/{unit,functional,integration,system} — Minitest with fixtures.
+
+  Build and test (.github/workflows):
+  - Tests: `bin/rails test`, a single file `bin/rails test test/functional/issues_controller_test.rb`.
+    Autoload check: `bin/rails test:autoload`. System tests run separately.
+  - Lint: `bundle exec rubocop --parallel`; CSS: `npx stylelint "app/assets/stylesheets/**/*.css"`.
+
+  Conventions:
+  - Every Ruby file starts with `# frozen_string_literal: true` and the GPL-2.0-or-later header
+    (LICENSE.txt).
+  - No user-facing string is hard-coded: all text comes from config/locales/en.yml via `l(:key)`.
+  - Development happens on redmine.org, not GitHub (CONTRIBUTING.md); there is no commit-message
+    convention enforced in this repository.
+
+  Domains in use: issues.
+
+# Per-artifact rules (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

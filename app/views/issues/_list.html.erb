@@ -1,5 +1,7 @@
 <% query_options = nil unless defined?(query_options) %>
 <% query_options ||= {} %>
+<% preview_cell = query_options[:preview] %>
+<% fixed_columns_count = preview_cell ? 3 : 2 %>
 
 <%= form_tag({}, :data => {:cm_url => issues_context_menu_path}) do -%>
 <%= hidden_field_tag 'back_url', url_for(:params => request.query_parameters), :id => nil %>
@@ -16,6 +18,9 @@
         <%= column_header(query, column, query_options) %>
       <% end %>
       <th class="buttons hide-when-print"></th>
+      <% if preview_cell %>
+      <th class="preview hide-when-print"></th>
+      <% end %>
     </tr>
   </thead>
   <tbody>
@@ -23,7 +28,7 @@
   <% if group_name %>
     <% reset_cycle %>
     <tr class="group open">
-      <td colspan="<%= query.inline_columns.size + 2 %>">
+      <td colspan="<%= query.inline_columns.size + fixed_columns_count %>">
         <span class="expander icon icon-expanded" onclick="toggleRowGroup(this);"><%= sprite_icon("angle-down") %></span>
         <span class="name"><%= group_name %></span>
         <% if group_count %>
@@ -41,11 +46,17 @@
     <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
     <% end %>
     <td class="buttons hide-when-print"><%= link_to_context_menu %></td>
+    <% if preview_cell %>
+    <td class="preview hide-when-print">
+      <%= link_to l(:label_preview), preview_fragment_issue_path(issue),
+                  :data => {:action => 'issue-preview#open'} %>
+    </td>
+    <% end %>
   </tr>
   <% query.block_columns.each do |column|
        if (text = column_content(column, issue)) && text.present? -%>
   <tr class="<%= current_cycle %>">
-    <td colspan="<%= query.inline_columns.size + 2 %>" class="<%= column.css_classes %> block_column">
+    <td colspan="<%= query.inline_columns.size + fixed_columns_count %>" class="<%= column.css_classes %> block_column">
       <% if query.block_columns.count > 1 %>
         <span><%= column.caption %></span>
       <% end %>

@@ -734,6 +734,12 @@
     text-align: start;
   }
 
+  /* issue list preview panel is a full-width block below the list here; the
+     fixed overlay only applies from 1200px up (see application.css) */
+  #issue-preview-panel {
+    inline-size: auto;
+  }
+
   /* subtasks and related issues list on issue show (without headers) */
   #issue_tree:not(.with-related-issues-table-headers) table.issues,
   #relations:not(.with-related-issues-table-headers) table.issues {

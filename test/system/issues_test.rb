@@ -769,4 +769,129 @@ class IssuesSystemTest < ApplicationSystemTestCase
       assert page.has_content?('Previewing custom field text')
     end
   end
+
+  def test_issue_row_preview_panel_opens_without_navigating_the_list
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    assert page.has_css?('tr#issue-1 td.preview a')
+    assert page.has_no_css?('#issue-preview-panel:not(.hidden)')
+
+    find('tr#issue-1 td.preview a').click
+
+    assert page.has_css?('#issue-preview-panel:not(.hidden)')
+    within('#issue-preview-panel') do
+      assert page.has_content?(Issue.find(1).subject)
+      assert page.has_content?('Unable to print recipes')
+    end
+
+    # the list is still displayed and the browser did not navigate
+    assert page.has_css?('table.issues tr#issue-1')
+    assert_current_path '/issues', :ignore_query => true
+  end
+
+  def test_issue_row_preview_panel_replaces_contents_for_a_second_row
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    find('tr#issue-1 td.preview a').click
+    within('#issue-preview-panel') do
+      assert page.has_content?(Issue.find(1).subject)
+    end
+
+    find('tr#issue-2 td.preview a').click
+    within('#issue-preview-panel') do
+      assert page.has_content?(Issue.find(2).subject)
+      assert page.has_no_content?(Issue.find(1).subject)
+    end
+
+    assert_current_path '/issues', :ignore_query => true
+  end
+
+  def test_issue_row_preview_panel_close_control_hides_the_panel
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    find('tr#issue-1 td.preview a').click
+    assert page.has_css?('#issue-preview-panel:not(.hidden)')
+
+    find('#issue-preview-panel a.issue-preview-close').click
+
+    assert page.has_css?('#issue-preview-panel.hidden', :visible => :all)
+    assert page.has_css?('table.issues tr#issue-1')
+    assert_current_path '/issues', :ignore_query => true
+  end
+
+  def test_issue_row_preview_panel_open_full_issue_navigates_to_the_issue
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    find('tr#issue-1 td.preview a').click
+    within('#issue-preview-panel') do
+      click_link 'Open in full view'
+    end
+
+    assert_current_path '/issues/1'
+    assert page.has_css?('div.issue')
+  end
+
+  def test_issue_row_preview_does_not_disturb_row_selection_or_the_context_menu
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    # clicking Preview must not select the row
+    find('tr#issue-1 td.preview a').click
+    assert page.has_css?('#issue-preview-panel:not(.hidden)')
+    assert page.has_no_css?('tr#issue-1.context-menu-selection')
+    assert_not find('tr#issue-1 input[type=checkbox]').checked?
+
+    # the row checkbox still selects the row
+    find('tr#issue-1 input[type=checkbox]').click
+    assert find('tr#issue-1 input[type=checkbox]').checked?
+    find('tr#issue-1 input[type=checkbox]').click
+
+    # the right-click context menu still opens
+    find('tr#issue-1 td.updated_on').click
+    find('tr#issue-1 td.updated_on').right_click
+    assert page.has_css?('#context-menu')
+
+    # the id link still navigates to the issue
+    visit '/issues'
+    find('tr#issue-1 td.id a').click
+    assert_current_path '/issues/1'
+  end
+
+  def test_issue_row_preview_panel_placement_at_narrow_and_wide_viewports
+    log_user('jsmith', 'jsmith')
+
+    page.current_window.resize_to(1400, 900)
+    visit '/issues'
+    find('tr#issue-1 td.preview a').click
+    assert page.has_css?('#issue-preview-panel:not(.hidden)')
+    assert_equal(
+      'fixed',
+      page.evaluate_script(
+        "window.getComputedStyle(document.getElementById('issue-preview-panel')).position"
+      )
+    )
+
+    page.current_window.resize_to(600, 900)
+    assert page.has_css?('#issue-preview-panel:not(.hidden)')
+    assert_equal(
+      'static',
+      page.evaluate_script(
+        "window.getComputedStyle(document.getElementById('issue-preview-panel')).position"
+      )
+    )
+  ensure
+    page.current_window.resize_to(1024, 900)
+  end
+
+  def test_issue_row_preview_subject_link_still_navigates
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    find('tr#issue-1 td.subject a').click
+    assert_current_path '/issues/1'
+  end
 end

@@ -143,6 +143,22 @@ class MyControllerTest < Redmine::ControllerTest
     end
   end
 
+  def test_page_issuequery_block_should_have_no_preview_cell_and_no_preview_panel
+    user = User.find(2)
+    user.pref.my_page_layout = {'top' => ['issuequery']}
+    user.pref.my_page_settings = {'issuequery' => {:query_id => 5}}
+    user.pref.save!
+
+    get :page
+    assert_response :success
+
+    assert_select 'table.issues tr.issue'
+    assert_select 'table.issues th.preview', 0
+    assert_select 'table.issues td.preview', 0
+    assert_select '[data-controller~=?]', 'issue-preview', 0
+    assert_select '#issue-preview-panel', 0
+  end
+
   def test_page_with_issuequery_block_and_project_query
     user = User.find(2)
     query =

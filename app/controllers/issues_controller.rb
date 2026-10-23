@@ -20,7 +20,7 @@
 class IssuesController < ApplicationController
   default_search_scope :issues
 
-  before_action :find_issue, :only => [:show, :edit, :update, :issue_tab]
+  before_action :find_issue, :only => [:show, :edit, :update, :issue_tab, :preview]
   before_action :find_issues, :only => [:bulk_edit, :bulk_update, :destroy]
   before_action :authorize, :except => [:index, :new, :create]
   before_action :find_optional_project, :only => [:index, :new, :create]
@@ -268,6 +268,12 @@ class IssuesController < ApplicationController
       @changesets.reverse! if User.current.wants_comments_in_reverse_order?
       render :partial => 'issues/tabs/changesets', :locals => {:changesets => @changesets, :project => @project}
     end
+  end
+
+  # Renders a read-only HTML fragment for a single issue, used by the issue
+  # list's preview panel. Performs no write of any kind.
+  def preview
+    render :partial => 'issues/preview'
   end
 
   # Bulk edit/copy a set of issues

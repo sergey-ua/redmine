@@ -326,6 +326,37 @@ body.has-main-menu #header {
 @media screen and (min-width: 1600px) and (max-width: 1919px) {#sidebar{width: 320px;}}
 @media screen and (min-width: 1920px) and (max-width: 2559px) {#sidebar{width: 360px;}}
 @media screen and (min-width: 2560px) {#sidebar{width: 380px;}}
+/* Issue list preview panel. Base: a block below the list. */
+#issue-preview-panel {
+  margin-block-start: 1em;
+  padding: 12px;
+  background: var(--oc-white);
+  border: 1px solid var(--oc-gray-4);
+  border-radius: 3px;
+}
+
+/* On wide screens it is a fixed overlay docked to the inline end of #content.
+   #content reserves room for it while it is open, so the overlay never covers
+   the list's own Preview controls. */
+@media screen and (min-width: 1200px) {
+  #issue-preview-panel {
+    position: fixed;
+    inset-block: 80px 20px;
+    inset-inline-end: 20px;
+    inline-size: 420px;
+    margin-block-start: 0;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+    z-index: 50;
+  }
+
+  body.issue-preview-open #content { padding-inline-end: 460px; }
+}
+#issue-preview-panel .issue-preview-header h3 { margin-block: 0 4px; }
+#issue-preview-panel .issue-preview-header p.subject { margin-block: 0 8px; font-weight: bold; }
+#issue-preview-panel .issue-preview-summary table.attributes th { text-align: start; inline-size: 35%; }
+#issue-preview-panel .issue-preview-description { margin-block-start: 12px; border-block-start: 1px solid var(--oc-gray-3); }
+
 #sidebar h3{ font-size: 0.875rem; margin-block-start: 14px; color: var(--oc-gray-7); }
 #sidebar h3:first-child{ margin-block-start: 0; }
 #sidebar hr{ inline-size: 100%; margin: 0 auto; block-size: 1px; background: var(--oc-gray-4); border: 0; }
@@ -582,6 +613,7 @@ table.list td.buttons, div.buttons { white-space:nowrap; text-align: end; }
 table.list td.buttons a, div.buttons a, table.list td.buttons span.icon-only { margin-inline-end: 0.6em; }
 table.list td.buttons a:last-child, div.buttons a:last-child { margin-inline-end: 0; }
 table.list td.buttons img, div.buttons img {vertical-align:middle;}
+table.list td.preview, table.list th.preview { white-space: nowrap; text-align: end; inline-size: 1%; }
 table.list td.reorder {inline-size: 15%; white-space: nowrap; text-align: center; }
 table.list table.progress td {padding-inline-end: 0; border-block-start: none;}
 table.list caption {text-align: start; padding-block: 0.5em; padding-inline: 0 0.5em;}
