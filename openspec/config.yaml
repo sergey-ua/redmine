@@ -1,0 +1,51 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Ruby on Rails 8.1 (Ruby >= 3.3, < 4.1), Propshaft asset pipeline, PostgreSQL/MySQL/SQLite3.
+  Layout: app/controllers (MVC controllers), app/models (ActiveRecord models), app/helpers (view helpers),
+    app/views/{resource} (ERB templates and partials, e.g. app/views/issues), app/assets/javascripts (plain JS,
+    loaded via app/views/layouts and asset pipeline), app/assets/stylesheets (CSS), lib/ (core libraries, plugins
+    API), plugins/{name} (optional plugins with their own app/, db/migrate, init.rb), config/routes.rb (routes),
+    test/unit, test/functional, test/system (Capybara/Selenium).
+  Build/test: `bundle install`; `bundle exec rake db:create db:migrate` (dev), `RAILS_ENV=test bundle exec rake
+    db:migrate` (test db); `bundle exec rails test test/unit/foo_test.rb` for a unit/functional test file;
+    `bundle exec rails test:system TEST=test/system/foo_test.rb` for one system test (never the whole suite).
+  Style: RuboCop (.rubocop.yml, inherits .rubocop_todo.yml, TargetRubyVersion 3.3, TargetRailsVersion 8.1,
+    NewCops enabled); run `bundle exec rubocop <changed files>` on changed Ruby files only.
+  Contributions upstream go through redmine.org (CONTRIBUTING.md); this fork's workflow uses GitHub pull
+    requests against this repository instead.
+  CI: .github/workflows/tests.yml runs the Rails test suite against postgresql/mysql2/sqlite3 on Ruby
+    3.3/3.4/4.0; .github/workflows/linters.yml runs linters (RuboCop among them).
+  Domains (existing OpenSpec/spec areas as used by this ticket): issues-controller, issues-model,
+    issues-helpers, issues-views (list rendering and templates).
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
