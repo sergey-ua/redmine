@@ -1,0 +1,3 @@
+$('#quick-preview-panel-body').html('<%= escape_javascript(render :partial => 'issues/quick_preview') %>');
+$('body').addClass('quick-preview-open');
+$('#quick-preview-panel').addClass('open').attr('aria-hidden', 'false');

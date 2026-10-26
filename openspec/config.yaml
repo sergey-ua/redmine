@@ -1,0 +1,57 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Ruby on Rails, Ruby '>= 3.3.0, < 4.1.0' (Gemfile), Rails 8.1 (TargetRailsVersion in .rubocop.yml).
+  Databases supported: postgresql, mysql2, sqlite3 (tests.yml CI matrix).
+  Layout: app/controllers (request handling, e.g. issues_controller.rb), app/models (domain
+    objects, e.g. issue.rb, journal.rb), app/helpers (view helpers, e.g. issues_helper.rb),
+    app/views (ERB templates), app/jobs, app/validators, app/javascript, lib/redmine (core
+    library code), lib/plugins, plugins/{name} (optional plugins with their own app/,
+    db/migrate, init.rb), test (unit/functional/integration tests), db (migrations,
+    schema), config (routes.rb, locales, settings).
+  Build/test commands: `bundle install` (Gemfile); `bundle exec rake db:create db:migrate`
+    (dev), `RAILS_ENV=test bundle exec rake db:migrate` (test db); tests via
+    `bundle exec rails test test/functional/foo_test.rb -n test_name` for one test; matrix in
+    .github/workflows/tests.yml runs against postgresql, mysql2 and sqlite3 on Ruby
+    3.3/3.4/4.0; lint with `bundle exec rubocop <changed files>`
+    (.github/workflows/linters.yml, config in .rubocop.yml inheriting .rubocop_todo.yml);
+    CSS/SCSS lint with `npx stylelint "app/assets/stylesheets/**/*.css"`; dependency audit
+    with `bundle exec bundle audit check --update`.
+  Conventions: rubocop AllCops TargetRubyVersion 3.3, TargetRailsVersion 8.1, NewCops enabled
+    (.rubocop.yml); vendor/, tmp/, bin/, plugins/, extra/, lib/generators templates,
+    lib/tasks, files/, db/schema.rb excluded from rubocop. CONTRIBUTING.md states upstream
+    development happens on redmine.org, not GitHub, and PRs there may not be reviewed by core
+    developers (this fork/workflow uses GitHub PRs regardless).
+  Domains in use (existing app/ areas): controllers, models, helpers, views, jobs,
+    validators, javascript.
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

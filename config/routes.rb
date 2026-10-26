@@ -240,6 +240,7 @@ Rails.application.routes.draw do
       # Used when updating the form of an existing issue
       patch 'edit', :to => 'issues#edit'
       get 'tab/:name', :action => 'issue_tab', :as => 'tab'
+      get 'quick_preview', :as => 'quick_preview'
     end
     collection do
       match 'bulk_edit', :via => [:get, :post]

@@ -9396,4 +9396,73 @@ class IssuesControllerTest < Redmine::ControllerTest
       assert_select 'thead.related-issues th', text: 'Total estimated time'
     end
   end
+
+  def test_quick_preview_xhr_renders_js_for_visible_issue
+    @request.session[:user_id] = 1
+    get :quick_preview, :params => {:id => 1}, :xhr => true
+    assert_response :success
+    assert_equal 'text/javascript', @response.media_type
+    assert_include 'quick-preview-panel-body', @response.body
+    assert_include 'Cannot print recipes', @response.body
+  end
+
+  def test_quick_preview_should_reject_non_visible_issue_like_show
+    issue = Issue.generate!(:project_id => 1, :is_private => true)
+    @request.session[:user_id] = 4
+    get :show, :params => {:id => issue.id}
+    show_status = @response.status
+    get :quick_preview, :params => {:id => issue.id}, :xhr => true
+    assert_equal show_status, @response.status
+    assert_not_include issue.subject, @response.body
+  end
+
+  def test_quick_preview_should_return_404_for_missing_issue
+    @request.session[:user_id] = 2
+    get :quick_preview, :params => {:id => 99999}, :xhr => true
+    assert_response :not_found
+  end
+
+  def test_quick_preview_should_show_unassigned_and_no_description
+    issue = Issue.generate!(:project_id => 1, :assigned_to_id => nil, :description => '')
+    @request.session[:user_id] = 1
+    get :quick_preview, :params => {:id => issue.id}, :xhr => true
+    assert_response :success
+    assert_include 'Unassigned', @response.body
+    assert_include 'No description', @response.body
+  end
+
+  def test_quick_preview_should_render_description_when_present
+    issue = Issue.generate!(:project_id => 1, :description => 'Preview body text')
+    @request.session[:user_id] = 1
+    get :quick_preview, :params => {:id => issue.id}, :xhr => true
+    assert_include 'Preview body text', @response.body
+    assert_not_include 'No description', @response.body
+  end
+
+  def test_quick_preview_should_omit_disabled_priority_and_assignee
+    issue = Issue.generate!(:project_id => 1)
+    issue.stubs(:disabled_core_fields).returns(['priority_id', 'assigned_to_id'])
+    Issue.stubs(:find).returns(issue)
+    @request.session[:user_id] = 1
+    get :quick_preview, :params => {:id => issue.id}, :xhr => true
+    assert_response :success
+    assert_not_include 'quick-preview-row"><span class="label">Priority', @response.body
+    assert_not_include 'Assignee', @response.body
+  end
+
+  def test_quick_preview_should_not_show_extended_fields
+    @request.session[:user_id] = 1
+    get :quick_preview, :params => {:id => 1}, :xhr => true
+    %w[Category Target\ version Start\ date Due\ date % Estimated\ time Spent\ time History].each do |label|
+      assert_not_include ">#{label}<", @response.body
+    end
+  end
+
+  def test_index_should_render_preview_trigger_and_panel_once
+    @request.session[:user_id] = 2
+    get :index, :params => {:project_id => 1}
+    assert_response :success
+    assert_select 'a.quick-preview-trigger', :text => 'Preview'
+    assert_select '#quick-preview-panel', 1
+  end
 end
