@@ -9416,6 +9416,31 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_not_include issue.subject, @response.body
   end
 
+  def test_quick_preview_should_leave_list_query_state_unchanged
+    @request.session[:user_id] = 2
+    get :index, :params => {:set_filter => 1, :f => ['status_id'], :op => {'status_id' => 'o'}, :sort => 'subject:desc', :group_by => 'tracker', :per_page => 10}
+    assert_response :success
+    list_state = @request.session[:issue_query].deep_dup
+
+    get :quick_preview, :params => {:id => 1}, :xhr => true
+    assert_response :success
+    assert_equal list_state, @request.session[:issue_query]
+  end
+
+  def test_quick_preview_should_not_reset_list_filters_sort_or_pagination
+    @request.session[:user_id] = 2
+    get :index, :params => {:set_filter => 1, :f => ['status_id'], :op => {'status_id' => 'o'}, :sort => 'subject:desc', :per_page => 10, :page => 2}
+    assert_response :success
+    list_state = @request.session[:issue_query].deep_dup
+
+    get :quick_preview, :params => {:id => 1}, :xhr => true
+    assert_response :success
+    get :index
+    assert_response :success
+    assert_equal list_state[:filters], @request.session[:issue_query][:filters]
+    assert_equal list_state[:sort], @request.session[:issue_query][:sort]
+  end
+
   def test_quick_preview_should_return_404_for_missing_issue
     @request.session[:user_id] = 2
     get :quick_preview, :params => {:id => 99999}, :xhr => true
