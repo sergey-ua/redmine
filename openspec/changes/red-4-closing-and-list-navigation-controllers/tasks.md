@@ -8,12 +8,12 @@
 
 ## 2. Close the test-coverage gap
 
-- [ ] 2.1 In `test/functional/issues_controller_test.rb`, add a functional test that sets filters/sort/per_page via `index`, snapshots `session[:per_page]` and the sort session key (e.g. `session[:issue_sort]`) directly, calls `quick_preview`, and asserts both are byte-equal afterward.
-- [ ] 2.2 Run `RAILS_ENV=test bundle exec rails test test/functional/issues_controller_test.rb -n "/quick_preview/"` and confirm it passes.
-- [ ] 2.3 Run `bundle exec rubocop test/functional/issues_controller_test.rb` and fix any offenses in the added lines.
+- [x] 2.1 In `test/functional/issues_controller_test.rb`, add a functional test that sets filters/sort/per_page via `index`, snapshots `session[:per_page]` and the sort session key (e.g. `session[:issue_sort]`) directly, calls `quick_preview`, and asserts both are byte-equal afterward.
+- [x] 2.2 Run `RAILS_ENV=test bundle exec rails test test/functional/issues_controller_test.rb -n "/quick_preview/"` and confirm it passes.
+- [x] 2.3 Run `bundle exec rubocop test/functional/issues_controller_test.rb` and fix any offenses in the added lines.
 
 ## 3. Correct the controllers spec (applied on archive)
 
-- [ ] 3.1 Spec delta (`specs/controllers/spec.md` in this change) corrects the "authorize excluded for quick_preview" claim to "authorize runs for quick_preview".
-- [ ] 3.2 Spec delta adds a scenario covering the direct session[:per_page]/sort-key assertion from task 2.1.
+- [x] 3.1 Spec delta (`specs/controllers/spec.md` in this change) corrects the "authorize excluded for quick_preview" claim to "authorize runs for quick_preview".
+- [x] 3.2 Spec delta adds a scenario covering the direct session[:per_page]/sort-key assertion from task 2.1.
 - [ ] 3.3 On archive, refresh the main spec's `Source` commit line to the commit that lands task 2.1's test.
