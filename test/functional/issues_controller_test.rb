@@ -9408,7 +9408,7 @@ class IssuesControllerTest < Redmine::ControllerTest
 
   def test_quick_preview_should_reject_non_visible_issue_like_show
     issue = Issue.generate!(:project_id => 1, :is_private => true)
-    @request.session[:user_id] = 2
+    @request.session[:user_id] = 4
     get :show, :params => {:id => issue.id}
     show_status = @response.status
     get :quick_preview, :params => {:id => issue.id}, :xhr => true
