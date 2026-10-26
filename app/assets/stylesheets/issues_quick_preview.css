@@ -59,7 +59,3 @@
   color: #888;
   font-style: italic;
 }
-
-body.quick-preview-open #content {
-  margin-right: 440px;
-}
