@@ -1,23 +1,29 @@
 schema: spec-driven
 
 context: |
-  Tech stack: Ruby on Rails 8.1 (Ruby >= 3.3, < 4.1), Propshaft asset pipeline, PostgreSQL/MySQL/SQLite3.
-  Layout: app/controllers (MVC controllers), app/models (ActiveRecord models), app/helpers (view helpers),
-    app/views/{resource} (ERB templates and partials, e.g. app/views/issues), app/assets/javascripts (plain JS,
-    loaded via app/views/layouts and asset pipeline), app/assets/stylesheets (CSS), lib/ (core libraries, plugins
-    API), plugins/{name} (optional plugins with their own app/, db/migrate, init.rb), config/routes.rb (routes),
-    test/unit, test/functional, test/system (Capybara/Selenium).
-  Build/test: `bundle install`; `bundle exec rake db:create db:migrate` (dev), `RAILS_ENV=test bundle exec rake
-    db:migrate` (test db); `bundle exec rails test test/unit/foo_test.rb` for a unit/functional test file;
-    `bundle exec rails test:system TEST=test/system/foo_test.rb` for one system test (never the whole suite).
-  Style: RuboCop (.rubocop.yml, inherits .rubocop_todo.yml, TargetRubyVersion 3.3, TargetRailsVersion 8.1,
-    NewCops enabled); run `bundle exec rubocop <changed files>` on changed Ruby files only.
-  Contributions upstream go through redmine.org (CONTRIBUTING.md); this fork's workflow uses GitHub pull
-    requests against this repository instead.
-  CI: .github/workflows/tests.yml runs the Rails test suite against postgresql/mysql2/sqlite3 on Ruby
-    3.3/3.4/4.0; .github/workflows/linters.yml runs linters (RuboCop among them).
-  Domains (existing OpenSpec/spec areas as used by this ticket): issues-controller, issues-model,
-    issues-helpers, issues-views (list rendering and templates).
+  Tech stack: Ruby on Rails, Ruby '>= 3.3.0, < 4.1.0' (Gemfile), Rails 8.1 (TargetRailsVersion in .rubocop.yml).
+  Databases supported: postgresql, mysql2, sqlite3 (tests.yml CI matrix).
+  Layout: app/controllers (request handling, e.g. issues_controller.rb), app/models (domain
+    objects, e.g. issue.rb, journal.rb), app/helpers (view helpers, e.g. issues_helper.rb),
+    app/views (ERB templates), app/jobs, app/validators, app/javascript, lib/redmine (core
+    library code), lib/plugins, plugins/{name} (optional plugins with their own app/,
+    db/migrate, init.rb), test (unit/functional/integration tests), db (migrations,
+    schema), config (routes.rb, locales, settings).
+  Build/test commands: `bundle install` (Gemfile); `bundle exec rake db:create db:migrate`
+    (dev), `RAILS_ENV=test bundle exec rake db:migrate` (test db); tests via
+    `bundle exec rails test test/functional/foo_test.rb -n test_name` for one test; matrix in
+    .github/workflows/tests.yml runs against postgresql, mysql2 and sqlite3 on Ruby
+    3.3/3.4/4.0; lint with `bundle exec rubocop <changed files>`
+    (.github/workflows/linters.yml, config in .rubocop.yml inheriting .rubocop_todo.yml);
+    CSS/SCSS lint with `npx stylelint "app/assets/stylesheets/**/*.css"`; dependency audit
+    with `bundle exec bundle audit check --update`.
+  Conventions: rubocop AllCops TargetRubyVersion 3.3, TargetRailsVersion 8.1, NewCops enabled
+    (.rubocop.yml); vendor/, tmp/, bin/, plugins/, extra/, lib/generators templates,
+    lib/tasks, files/, db/schema.rb excluded from rubocop. CONTRIBUTING.md states upstream
+    development happens on redmine.org, not GitHub, and PRs there may not be reviewed by core
+    developers (this fork/workflow uses GitHub PRs regardless).
+  Domains in use (existing app/ areas): controllers, models, helpers, views, jobs,
+    validators, javascript.
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
