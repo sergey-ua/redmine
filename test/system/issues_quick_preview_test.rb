@@ -50,4 +50,52 @@ class IssuesQuickPreviewSystemTest < ApplicationSystemTestCase
     find('#quick-preview-panel [data-quick-preview-close]').click
     assert_no_selector '#quick-preview-panel.open'
   end
+
+  def test_submitting_query_form_closes_panel_and_applies_filter
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    first('tr.issue td.buttons a.quick-preview-trigger').click
+    assert_selector '#quick-preview-panel.open', wait: 5
+
+    page.execute_script("document.getElementById('query_form').submit()")
+    assert_no_selector '#quick-preview-panel.open', wait: 5
+    assert_selector 'table.list'
+  end
+
+  def test_clicking_sort_header_closes_panel_and_sorts_list
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+
+    first('tr.issue td.buttons a.quick-preview-trigger').click
+    assert_selector '#quick-preview-panel.open', wait: 5
+
+    find('table.list thead th a', text: /\AStatus\z/).click
+    assert_no_selector '#quick-preview-panel.open', wait: 5
+    assert_match(/sort=status/, page.current_url)
+  end
+
+  def test_clicking_pagination_link_closes_panel_and_loads_page
+    project = Project.find(1)
+    26.times { Issue.generate!(project: project, tracker: project.trackers.first, author: User.find(2)) }
+    log_user('jsmith', 'jsmith')
+    visit '/issues?per_page=25'
+
+    first('tr.issue td.buttons a.quick-preview-trigger').click
+    assert_selector '#quick-preview-panel.open', wait: 5
+
+    find('.pagination a', text: /\A2\z|Next/, match: :first).click
+    assert_no_selector '#quick-preview-panel.open', wait: 5
+    assert_match(/page=2/, page.current_url)
+  end
+
+  def test_navigation_with_panel_closed_is_unchanged
+    log_user('jsmith', 'jsmith')
+    visit '/issues'
+    assert_no_selector '#quick-preview-panel.open'
+
+    find('table.list thead th a', text: /\AStatus\z/).click
+    assert_match(/sort=status/, page.current_url)
+    assert_no_selector '#quick-preview-panel.open'
+  end
 end
