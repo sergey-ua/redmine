@@ -6,11 +6,14 @@ context: |
   Layout: app/controllers (request handling, e.g. issues_controller.rb), app/models (domain
     objects, e.g. issue.rb, journal.rb), app/helpers (view helpers, e.g. issues_helper.rb),
     app/views (ERB templates), app/jobs, app/validators, app/javascript, lib/redmine (core
-    library code), lib/plugins, test (unit/functional/integration tests), db (migrations,
+    library code), lib/plugins, plugins/{name} (optional plugins with their own app/,
+    db/migrate, init.rb), test (unit/functional/integration tests), db (migrations,
     schema), config (routes.rb, locales, settings).
-  Build/test commands: `bundle install` (Gemfile); tests via `bin/rails test` or
-    `rake test`, matrix in .github/workflows/tests.yml runs against postgresql, mysql2 and
-    sqlite3 on Ruby 3.3/3.4/4.0; lint with `bundle exec rubocop --parallel`
+  Build/test commands: `bundle install` (Gemfile); `bundle exec rake db:create db:migrate`
+    (dev), `RAILS_ENV=test bundle exec rake db:migrate` (test db); tests via
+    `bundle exec rails test test/functional/foo_test.rb -n test_name` for one test; matrix in
+    .github/workflows/tests.yml runs against postgresql, mysql2 and sqlite3 on Ruby
+    3.3/3.4/4.0; lint with `bundle exec rubocop <changed files>`
     (.github/workflows/linters.yml, config in .rubocop.yml inheriting .rubocop_todo.yml);
     CSS/SCSS lint with `npx stylelint "app/assets/stylesheets/**/*.css"`; dependency audit
     with `bundle exec bundle audit check --update`.
