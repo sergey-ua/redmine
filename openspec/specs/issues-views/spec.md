@@ -40,7 +40,19 @@ The system SHALL NOT currently provide any AJAX-loaded preview of an issue from 
 - **WHEN** implementing the ticket's "Preview" row action and side panel
 - **THEN** there is no existing panel component to extend; a new partial/JS file is needed, and the new preview endpoint's route must not reuse `preview_issue` (`/issues/preview`)
 
+### Requirement: `show.html.erb` renders header, summary fields and description from `@issue`
+The system SHALL render, on the full issue page (app/views/issues/show.html.erb), in order: the issue heading and status badge (`issue_heading(@issue)`, `issue_status_type_badge`), a private badge if `@issue.is_private?`, authoring info, the summary field rows via `issue_fields_rows` (status, priority unless disabled, assigned_to unless disabled, category unless disabled/no categories, fixed_version unless disabled/no versions, start/due date unless disabled, done_ratio unless disabled, estimated_hours unless disabled, spent time if `view_time_entries` permitted), custom field rows, then the description block (guarded by `@issue.description?`) rendered via `textilizable @issue, :description, :attachments => @issue.attachments`. This is the reference for what "the same visibility as the full issue page" means for any new issue-preview rendering.
+
+#### Scenario: Field hidden by permission vs. by tracker setting
+- **WHEN** a field would be hidden either because the tracker disables it (`disabled_core_fields`) or because of category/version data not existing for the project
+- **THEN** `show.html.erb` omits the row in both cases using `unless` guards inline in the template — there is no single "visible fields" helper; each row has its own guard condition.
+
+#### Scenario: No "Unassigned" or "No description" placeholder text exists today
+- **WHEN** `@issue.assigned_to` is nil, or `@issue.description?` is false
+- **THEN** `show.html.erb` shows `"-"` for the empty assignee and omits the description block entirely (no block, no placeholder) — confirmed by reading show.html.erb:81 and :108-120, and by `rg` finding no "Unassigned" or "No description" string in `config/locales/en.yml`. A preview endpoint that must show these specific strings needs new locale keys; they do not already exist to reuse.
+
 ## Code map
+- app/views/issues/show.html.erb: full issue page template; header/private-badge at lines 3-6, summary field rows at lines 71-104, description block at lines 108-120 (guarded by `@issue.description?`, rendered with `textilizable`).
 - app/views/issues/_list.html.erb: row markup for grouped/ungrouped issue tables; the `<td class="buttons hide-when-print">` cell (line 44) is where a per-row Preview link belongs.
 - app/views/issues/index.html.erb: global issue list page; renders `issues/_list` partial (line 27); per-project lists reuse the same partial through other controller actions.
 - app/helpers/issues_helper.rb: `issue_list` (L27) and `grouped_issue_list` (L39) drive row iteration (ancestor/level bookkeeping) that `_list.html.erb` calls.
