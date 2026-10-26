@@ -98,3 +98,11 @@
 <% end %>
 
 <%= context_menu %>
+
+<% content_for :header_tags do %>
+    <%= javascript_include_tag 'issues_quick_preview' %>
+    <%= stylesheet_link_tag 'issues_quick_preview' %>
+<% end %>
+<div id="quick-preview-panel" class="quick-preview-panel" aria-hidden="true">
+  <div id="quick-preview-panel-body"></div>
+</div>

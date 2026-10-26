@@ -1,0 +1,24 @@
+<div class="quick-preview-header">
+  <span class="quick-preview-id">#<%= @issue.id %></span>
+  <span class="quick-preview-subject"><%= @issue.subject %></span>
+  <%= link_to l(:label_open_full_issue), issue_path(@issue), :class => 'quick-preview-full' %>
+  <%= link_to '×', '#', :class => 'quick-preview-close', :title => l(:button_close), :data => {:quick_preview_close => true} %>
+</div>
+<div class="quick-preview-summary">
+  <div class="quick-preview-row"><span class="label"><%= l(:field_project) %></span> <%= link_to_project(@issue.project) %></div>
+  <div class="quick-preview-row"><span class="label"><%= l(:field_tracker) %></span> <%= @issue.tracker.name %></div>
+  <div class="quick-preview-row"><span class="label"><%= l(:field_status) %></span> <%= @issue.status.name %></div>
+  <% unless @issue.disabled_core_fields.include?('priority_id') %>
+    <div class="quick-preview-row"><span class="label"><%= l(:field_priority) %></span> <%= @issue.priority.name %></div>
+  <% end %>
+  <% unless @issue.disabled_core_fields.include?('assigned_to_id') %>
+    <div class="quick-preview-row"><span class="label"><%= l(:field_assigned_to) %></span> <%= @issue.assigned_to ? link_to_principal(@issue.assigned_to) : l(:label_unassigned) %></div>
+  <% end %>
+</div>
+<div class="quick-preview-description">
+  <% if @issue.description? %>
+    <%= textilizable @issue, :description, :only_path => true %>
+  <% else %>
+    <p class="quick-preview-empty"><%= l(:label_no_description) %></p>
+  <% end %>
+</div>
