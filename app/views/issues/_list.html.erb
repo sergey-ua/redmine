@@ -40,7 +40,7 @@
     <% query.inline_columns.each do |column| %>
     <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
     <% end %>
-    <td class="buttons hide-when-print"><%= link_to l(:label_preview), quick_preview_issue_path(issue), :remote => true, :class => 'quick-preview-trigger' %><%= link_to_context_menu %></td>
+    <td class="buttons hide-when-print"><% if local_assigns[:quick_preview] %><%= link_to l(:label_preview), quick_preview_issue_path(issue), :remote => true, :class => 'quick-preview-trigger' %><% end %><%= link_to_context_menu %></td>
   </tr>
   <% query.block_columns.each do |column|
        if (text = column_content(column, issue)) && text.present? -%>
