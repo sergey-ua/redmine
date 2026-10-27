@@ -909,6 +909,69 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_equal Issue.count, response.body.chomp.split("\n").size - 1
   end
 
+  def test_index_xlsx
+    get(:index, :params => {:format => 'xlsx'})
+    assert_response :success
+    assert_equal 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', @response.media_type
+    assert_match /issues\.xlsx/, @response.headers['Content-Disposition']
+    sheet = xlsx_sheet_xml(xlsx_body)
+    assert_match /<sheet [^>]*name="Issues"/, xlsx_workbook_xml(xlsx_body)
+    assert_equal ['ID', 'Subject', 'Tracker', 'Status', 'Priority', 'Assignee', 'Updated'],
+                 xlsx_row_values(sheet, 1)
+  end
+
+  def test_index_xlsx_header_is_bold
+    get(:index, :params => {:format => 'xlsx'})
+    assert_response :success
+    styles = xlsx_entry(xlsx_body, 'xl/styles.xml')
+    assert_match /<b val="1"\/>/, styles
+    sheet = xlsx_sheet_xml(xlsx_body)
+    assert_match /<c r="A1" s="\d+"/, sheet
+  end
+
+  def test_index_xlsx_id_cells_are_hyperlinks_to_issue_url
+    get(:index, :params => {:format => 'xlsx', :f => ['']})
+    assert_response :success
+    issue = Issue.visible.first
+    rels = xlsx_entry(xlsx_body, 'xl/worksheets/_rels/sheet1.xml.rels')
+    assert_include "http://test.host/issues/#{issue.id}", rels
+    assert_match /<hyperlink ref="A2"/, xlsx_sheet_xml(xlsx_body)
+  end
+
+  def test_index_xlsx_subject_is_literal_text
+    Issue.generate!(:subject => '=SUM(1,2)', :project_id => 1, :tracker_id => 1)
+    get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => [''], :project_id => 1})
+    assert_response :success
+    assert_include '<t>=SUM(1,2)</t>', xlsx_sheet_xml(xlsx_body)
+    assert_no_match %r{<f>}, xlsx_sheet_xml(xlsx_body)
+  end
+
+  def test_index_xlsx_unassigned_issue_has_blank_assignee
+    Issue.update_all(:assigned_to_id => nil)
+    get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => [''], :project_id => 1})
+    assert_response :success
+    sheet = xlsx_sheet_xml(xlsx_body)
+    assert_match %r{<c r="F2"[^>]*/>|<c r="F2"[^>]*></c>|<c r="F2"[^>]*><is><t></t></is></c>}, sheet
+  end
+
+  def test_index_xlsx_with_empty_result_has_only_header
+    get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => ['subject'], :op => {'subject' => '='}, :v => {'subject' => ['no such subject xyz']}})
+    assert_response :success
+    assert_equal 1, xlsx_sheet_xml(xlsx_body).scan('<row ').size
+  end
+
+  def test_index_xlsx_without_export_permission_should_be_denied
+    Role.find_by_name('Manager').remove_permission! :export_issues
+    @request.session[:user_id] = 2
+    get(:index, :params => {:project_id => 1, :format => 'xlsx'})
+    assert_response :forbidden
+  end
+
+  def test_index_xlsx_with_invalid_query_should_return_422
+    get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => ['status_id'], :op => {'status_id' => '='}, :v => {'status_id' => ['']}, :c => ['subject']})
+    assert_response :unprocessable_content
+  end
+
   def test_index_csv_with_description
     Issue.generate!(:description => 'test_index_csv_with_description')
     with_settings :default_language => 'en' do
@@ -9466,5 +9529,32 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_response :success
     assert_select 'a.quick-preview-trigger', :text => 'Preview'
     assert_select '#quick-preview-panel', 1
+  end
+
+  def xlsx_body
+    body = @response.body
+    body.respond_to?(:string) ? body.string.b : body.b
+  end
+
+  def xlsx_entry(body, name)
+    zip = Zip::File.open_buffer(body)
+    zip.find_entry(name) ? zip.read(name) : ''
+  end
+
+  def xlsx_sheet_xml(body)
+    xlsx_entry(body, 'xl/worksheets/sheet1.xml')
+  end
+
+  def xlsx_workbook_xml(body)
+    xlsx_entry(body, 'xl/workbook.xml')
+  end
+
+  def xlsx_row_values(sheet, row_number)
+    row = sheet[%r{<row r="#{row_number}".*?</row>}m]
+    shared = xlsx_entry(xlsx_body, 'xl/sharedStrings.xml')
+    strings = shared.scan(%r{<si>(.*?)</si>}m).map {|m| m.first.gsub(%r{<[^>]+>}, '')}
+    row.scan(%r{<c r="[A-Z]+\d+"(?: s="\d+")?(?: t="(\w+)")?>(?:<f>.*?</f>)?<v>(.*?)</v>|<c r="[A-Z]+\d+"(?: s="\d+")?(?: t="(\w+)")?>(?:<is><t>(.*?)</t></is>)}m).map do |t, v, _, inline|
+      inline || (t == 's' ? strings[v.to_i] : v)
+    end
   end
 end

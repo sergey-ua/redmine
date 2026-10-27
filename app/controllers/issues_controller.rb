@@ -48,7 +48,7 @@ class IssuesController < ApplicationController
     retrieve_query(IssueQuery, use_session)
 
     if @query.valid?
-      if (request.format.csv? || request.format.pdf?) && !export_allowed?(:export_issues, @query.base_scope)
+      if (request.format.csv? || request.format.pdf? || request.format.xlsx?) && !export_allowed?(:export_issues, @query.base_scope)
         deny_access
         return
       end
@@ -87,11 +87,29 @@ class IssuesController < ApplicationController
           @issues = @query.issues(:limit => Setting.issues_export_limit.to_i)
           send_file_headers! :type => 'application/pdf', :filename => "#{filename_for_export(@query, 'issues')}.pdf"
         end
+        format.xlsx do
+          issues = @query.issues(:limit => Setting.issues_export_limit.to_i)
+          package = Axlsx::Package.new
+          bold = package.workbook.styles.add_style(:b => true)
+          package.workbook.add_worksheet(:name => 'Issues') do |sheet|
+            sheet.add_row ['ID', 'Subject', 'Tracker', 'Status', 'Priority', 'Assignee', 'Updated'],
+                          :style => bold
+            issues.each do |issue|
+              row = sheet.add_row [issue.id, issue.subject, issue.tracker.to_s, issue.status.to_s,
+                                   issue.priority.to_s, issue.assigned_to.to_s, format_time(issue.updated_on)],
+                                  :types => [:integer, :string, :string, :string, :string, :string, :string]
+              sheet.add_hyperlink :location => issue_url(issue), :ref => row.cells.first
+            end
+          end
+          send_data package.to_stream.read,
+                    :type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    :filename => "#{filename_for_export(@query, 'issues')}.xlsx"
+        end
       end
     else
       respond_to do |format|
         format.html {render :layout => !request.xhr?}
-        format.any(:atom, :csv, :pdf) {head :unprocessable_content}
+        format.any(:atom, :csv, :pdf, :xlsx) {head :unprocessable_content}
         format.api {render_validation_errors(@query)}
       end
     end
