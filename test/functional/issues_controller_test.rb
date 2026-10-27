@@ -9444,9 +9444,11 @@ class IssuesControllerTest < Redmine::ControllerTest
 
   def test_quick_preview_should_not_reset_list_filters_sort_or_pagination
     @request.session[:user_id] = 2
-    get :index, :params => {:set_filter => 1, :f => ['status_id'], :op => {'status_id' => 'o'}, :sort => 'subject:desc', :per_page => 10, :page => 2}
+    get :index, :params => {:set_filter => 1, :f => ['status_id'], :op => {'status_id' => 'o'}, :sort => 'subject:desc', :per_page => 25, :page => 2}
     assert_response :success
     list_state = @request.session[:issue_query].deep_dup
+    per_page_before = @request.session[:per_page]
+    assert_equal 25, per_page_before
 
     get :quick_preview, :params => {:id => 1}, :xhr => true
     assert_response :success
@@ -9454,6 +9456,7 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_response :success
     assert_equal list_state[:filters], @request.session[:issue_query][:filters]
     assert_equal list_state[:sort], @request.session[:issue_query][:sort]
+    assert_equal per_page_before, @request.session[:per_page]
   end
 
   def test_quick_preview_should_return_404_for_missing_issue
