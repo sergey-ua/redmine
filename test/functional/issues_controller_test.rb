@@ -740,6 +740,7 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_select 'a.atom[href="/issues.atom"]'
     assert_select 'a.csv[href="/issues.csv"]'
     assert_select 'a.pdf[href="/issues.pdf"]'
+    assert_select 'a.xlsx[href="/issues.xlsx"]'
     assert_select 'form#csv-export-form[action="/issues.csv"]'
   end
 
@@ -831,6 +832,7 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_response :success
     assert_select 'p.other-formats a.csv', 0
     assert_select 'p.other-formats a.pdf', 0
+    assert_select 'p.other-formats a.xlsx', 0
     assert_select 'p.other-formats a.atom'
     assert_select '#csv-export-options', 0
 
