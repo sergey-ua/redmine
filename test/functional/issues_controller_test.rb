@@ -967,6 +967,26 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_response :forbidden
   end
 
+  def test_index_xlsx_updated_column_uses_user_time_zone
+    @request.session[:user_id] = 2
+    User.find(2).pref.update!(:time_zone => 'Tokyo')
+    Issue.find(1).update_column(:updated_on, Time.utc(2026, 5, 24, 23, 0, 0))
+    get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => ['issue_id'], :op => {'issue_id' => '='}, :v => {'issue_id' => ['1']}})
+    assert_response :success
+    assert_include '05/25/2026 08:00 AM', xlsx_sheet_xml(xlsx_body)
+  end
+
+  def test_index_xlsx_spanning_subproject_without_permission_should_be_denied
+    project = Project.find(1)
+    subproject = Project.generate!(:parent => project)
+    no_export_role = Role.generate!(:permissions => [:view_issues])
+    Member.create!(:project => subproject, :principal => User.find(2), :roles => [no_export_role])
+    Issue.generate!(:project => subproject)
+    @request.session[:user_id] = 2
+    get(:index, :params => {:project_id => project.id, :format => 'xlsx'})
+    assert_response :forbidden
+  end
+
   def test_index_xlsx_with_invalid_query_should_return_422
     get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => ['status_id'], :op => {'status_id' => '='}, :v => {'status_id' => ['']}, :c => ['subject']})
     assert_response :unprocessable_content
