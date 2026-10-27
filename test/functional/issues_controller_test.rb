@@ -946,6 +946,17 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_no_match %r{<f>}, xlsx_sheet_xml(xlsx_body)
   end
 
+  def test_index_xlsx_subject_with_plus_minus_at_prefix_is_literal_text
+    ['+1+1', '-1-1', '@SUM(1,2)'].each do |subject|
+      Issue.generate!(:subject => subject, :project_id => 1, :tracker_id => 1)
+    end
+    get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => [''], :project_id => 1})
+    assert_response :success
+    sheet = xlsx_sheet_xml(xlsx_body)
+    ['+1+1', '-1-1', '@SUM(1,2)'].each {|subject| assert_include "<t>#{subject}</t>", sheet}
+    assert_no_match %r{<f>}, sheet
+  end
+
   def test_index_xlsx_unassigned_issue_has_blank_assignee
     Issue.update_all(:assigned_to_id => nil)
     get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => [''], :project_id => 1})
