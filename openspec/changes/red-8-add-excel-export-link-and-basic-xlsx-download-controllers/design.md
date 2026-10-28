@@ -53,9 +53,9 @@ renders an ERB template). See proposal.md - Why/What Changes for the ticket-leve
 ## Risks / Trade-offs
 
 - [New runtime dependency pulls in transitive gems] → `caxlsx` is pure Ruby with a small
-  dependency footprint (`rubyzip`, `htmlentities`); verify `bundle install` resolves cleanly and
-  no license/version conflict with the existing `Gemfile.lock`-less setup (this repo has no
-  committed lockfile) before merging.
+  dependency footprint (`rubyzip`, `htmlentities`); `Gemfile.lock` is tracked and pins
+  `caxlsx (4.5.0)`, so the lockfile must be committed with the `Gemfile` change and `bundle install`
+  must resolve cleanly before merging.
 - [Large exports hold the whole workbook in memory before sending] → bounded by the existing
   `Setting.issues_export_limit`, the same bound csv/pdf already accept; no new exposure.
 - [Guard/branch duplication (csv/pdf/xlsx each repeat the fetch and guard condition)] → accepted
