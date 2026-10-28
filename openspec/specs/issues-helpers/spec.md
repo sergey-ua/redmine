@@ -51,6 +51,10 @@ The system SHALL expose `QueriesHelper#filename_for_export(query, default_name)`
 - **WHEN** `params[:query_name]` is `'My Query Name'`
 - **THEN** the filename becomes `my_query_name` before the caller's extension is appended, confirmed by `test_index_csv_filename_with_query_name_param` asserting `/my_query_name\.csv/`
 
+#### Scenario: The xlsx export format calls the same filename helper
+- **WHEN** `IssuesController#index` responds to `format.xlsx` and builds the download filename for the issue list export
+- **THEN** it calls `filename_for_export(@query, 'issues')` the same way `format.csv` and `format.pdf` do, and appends `.xlsx` itself (`"#{filename_for_export(@query, 'issues')}.xlsx"`); `filename_for_export` requires no code change to support this third caller
+
 ### Requirement: `query_to_csv` is CSV-specific and not reusable as-is for another export format
 The system SHALL build the CSV body in `QueriesHelper#query_to_csv(items, query, options={})` (app/helpers/queries_helper.rb:330-341) by iterating `query.columns`, writing a header row of `column.caption`, then one row per item via `csv_content(c, item)` into a `Redmine::Export::CSV.generate` block. This method is CSV-format-specific (it returns CSV text through `csv <<`); a new export format does not call into it and instead builds its own output from `query.columns`/`csv_content`-equivalent value extraction, or iterates `items` directly for a fixed column set.
 
