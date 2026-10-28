@@ -39,7 +39,6 @@
   <% if export_allowed %>
   <%= f.link_to_with_query_parameters 'CSV', {}, :onclick => "showModal('csv-export-options', '350px'); return false;" %>
   <%= f.link_to_with_query_parameters 'PDF' %>
-  <%= f.link_to_with_query_parameters 'Excel', {:format => 'xlsx'}, :class => 'xlsx' %>
   <% end %>
   <%= f.link_to_with_query_parameters 'Atom', :key => User.current.atom_key %>
 <% end %>

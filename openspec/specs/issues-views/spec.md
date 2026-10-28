@@ -33,17 +33,6 @@ The system SHALL include page-wide JavaScript through `ApplicationHelper#javascr
 - **WHEN** a new per-page script (e.g. for a list feature) needs to run on every page that renders the issue list
 - **THEN** it is registered through `javascript_heads` (an additional `javascript_include_tag` call) or bundled via the Propshaft/importmap pipeline (config/importmap.rb), not inlined per-partial
 
-### Requirement: The other-formats block offers CSV, PDF and Atom links, gated by `export_allowed`
-The system SHALL compute `export_allowed = export_allowed?(:export_issues, @query.base_scope)` once (index.html.erb:37) and render, inside `other_formats_links` (lib/redmine/views/other_formats_builder.rb), a 'CSV' link (opens a modal, `index.html.erb:39`) and a 'PDF' link (direct, `:40`) only when `export_allowed` is true, and an 'Atom' link (`:41`) unconditionally regardless of `export_allowed`. An "Excel" link (RED-8) for an `.xlsx` download belongs beside CSV and PDF inside the same `if export_allowed` block (index.html.erb:39-41), as a direct `f.link_to_with_query_parameters 'Excel'` call with no modal (unlike CSV, which opens a configuration dialog), so it is shown only to users export_allowed already permits and downloads immediately on click.
-
-#### Scenario: User without export permission sees Atom but not CSV/PDF
-- **WHEN** `export_allowed` is false for the current user
-- **THEN** the other-formats block renders only the 'Atom' link; the 'CSV' and 'PDF' links (and any future 'Excel' link placed in the same guarded block) are not rendered
-
-#### Scenario: User with export permission sees CSV, PDF and Atom together
-- **WHEN** `export_allowed` is true
-- **THEN** the other-formats block renders 'CSV', 'PDF' and 'Atom' in that order (index.html.erb:39-41); a new 'Excel' link added to the `if export_allowed` branch appears alongside them, as a direct download link like PDF, not a modal-opening link like CSV
-
 ### Requirement: No "preview panel" or side-panel UI exists yet
 The system SHALL NOT currently provide any AJAX-loaded preview of an issue from the list view. No `preview_panel` view, partial, or JavaScript file exists in app/views/issues/ or app/assets/javascripts/. The existing `/issues/preview` route (config/routes.rb:41, `previews#issue`) is an unrelated Textile/Markdown text-preview endpoint for the edit form, not an issue-detail preview.
 
@@ -65,8 +54,7 @@ The system SHALL render, on the full issue page (app/views/issues/show.html.erb)
 ## Code map
 - app/views/issues/show.html.erb: full issue page template; header/private-badge at lines 3-6, summary field rows at lines 71-104, description block at lines 108-120 (guarded by `@issue.description?`, rendered with `textilizable`).
 - app/views/issues/_list.html.erb: row markup for grouped/ungrouped issue tables; the `<td class="buttons hide-when-print">` cell (line 44) is where a per-row Preview link belongs.
-- app/views/issues/index.html.erb: global issue list page; renders `issues/_list` partial (line 27); per-project lists reuse the same partial through other controller actions; `export_allowed` computed at line 37 and the `other_formats_links` block (CSV/PDF/Atom links, lines 38-41) is where a new Excel link belongs, inside the `if export_allowed` branch (39-41).
-- lib/redmine/views/other_formats_builder.rb: `link_to_with_query_parameters` (line 35), the helper each format link (CSV, PDF, Atom, and a future Excel) calls through the `other_formats_links do |f| ... end` block.
+- app/views/issues/index.html.erb: global issue list page; renders `issues/_list` partial (line 27); per-project lists reuse the same partial through other controller actions.
 - app/helpers/issues_helper.rb: `issue_list` (L27) and `grouped_issue_list` (L39) drive row iteration (ancestor/level bookkeeping) that `_list.html.erb` calls.
 - app/helpers/application_helper.rb: `link_to_issue` (L117, subject/ID link), `link_to_context_menu` (L1634, per-row buttons-column control), `javascript_heads` (L1826, global per-page script loading).
 - app/views/layouts/base.html.erb: calls `javascript_heads` (L13) and `stylesheet_link_tag` (L11), the two places global assets are wired in.
@@ -76,4 +64,4 @@ The system SHALL render, on the full issue page (app/views/issues/show.html.erb)
 - app/views/issues (no Graphify graph: ERB is not parsed by this image's graph build); read directly, confirmed above.
 
 Source: commit 53abb0a6c4107c996ee4d478e1f50441f6328912
-Graph queries: explain IssuesHelper --graph graph.json: 41 edges, found at app/helpers/issues_helper.rb:20; affected ".issue_list()" --depth 2: 1 dependent, `.render_descendants_tree()` (issues_helper.rb:116), outside list rendering proper; affected ".link_to_issue()" --depth 2: callers in issues_helper.rb (render_descendants_tree, render_issue_relations, render_issue_subject_with_tree, render_issue_tooltip, show_detail, details_to_strings) and in queries_helper.rb/timelog_helper.rb/custom_fields_helper.rb/roles_helper.rb via shared value-formatting methods; explain "preview" --graph graph.json: ambiguous, matches only wiki_controller.rb and messages_controller.rb (unrelated existing `preview` actions), confirming no issue-preview code exists yet; path "IssuesController" ".issue_list()" --undirected: no path found (ERB views are not in the graph, so controller-to-view edges never appear; confirmed by reading the files instead); explain "other_formats_links" --graph graph.json: not found (ERB/lib helper call not a node; confirmed by reading index.html.erb:38 and lib/redmine/views/other_formats_builder.rb directly).
+Graph queries: explain IssuesHelper --graph graph.json: 41 edges, found at app/helpers/issues_helper.rb:20; affected ".issue_list()" --depth 2: 1 dependent, `.render_descendants_tree()` (issues_helper.rb:116), outside list rendering proper; affected ".link_to_issue()" --depth 2: callers in issues_helper.rb (render_descendants_tree, render_issue_relations, render_issue_subject_with_tree, render_issue_tooltip, show_detail, details_to_strings) and in queries_helper.rb/timelog_helper.rb/custom_fields_helper.rb/roles_helper.rb via shared value-formatting methods; explain "preview" --graph graph.json: ambiguous, matches only wiki_controller.rb and messages_controller.rb (unrelated existing `preview` actions), confirming no issue-preview code exists yet; path "IssuesController" ".issue_list()" --undirected: no path found (ERB views are not in the graph, so controller-to-view edges never appear; confirmed by reading the files instead).
