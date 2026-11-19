@@ -1003,6 +1003,20 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_response :unprocessable_content
   end
 
+  def test_index_csv_and_pdf_spanning_subproject_without_permission_should_be_denied
+    project = Project.find(1)
+    subproject = Project.generate!(:parent => project)
+    no_export_role = Role.generate!(:permissions => [:view_issues])
+    Member.create!(:project => subproject, :principal => User.find(2), :roles => [no_export_role])
+    Issue.generate!(:project => subproject)
+    @request.session[:user_id] = 2
+
+    %w(csv pdf).each do |format|
+      get(:index, :params => {:project_id => project.id, :format => format})
+      assert_response :forbidden, "expected 403 for format #{format}"
+    end
+  end
+
   def test_index_csv_and_pdf_without_export_permission_should_be_denied_like_xlsx
     @request.session[:user_id] = 2
     Role.find_by_name('Manager').remove_permission! :export_issues
