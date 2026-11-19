@@ -744,6 +744,39 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_select 'form#csv-export-form[action="/issues.csv"]'
   end
 
+  def test_index_other_formats_menu_should_list_csv_pdf_xlsx_and_atom_in_order
+    get :index
+    assert_response :success
+    assert_equal %w(csv pdf xlsx atom), css_select('p.other-formats a').map {|a| a.attr('class')}
+  end
+
+  def test_index_csv_and_pdf_export_links_should_be_unchanged_with_xlsx_link_present
+    get(
+      :index,
+      :params => {
+        :project_id => 1,
+        :set_filter => "1",
+        :tracker_id => "2",
+        :sort => 'status',
+        :page => 2
+      }
+    )
+    assert_response :success
+    assert_select 'p.other-formats a.xlsx'
+
+    assert_select 'p.other-formats a.csv', :text => 'CSV' do
+      assert_select '[rel=?]', 'nofollow'
+      assert_select '[onclick=?]', "showModal('csv-export-options', '350px'); return false;"
+      assert_select '[href=?]', '/projects/1/issues.csv?set_filter=1&sort=status&tracker_id=2'
+    end
+
+    assert_select 'p.other-formats a.pdf', :text => 'PDF' do
+      assert_select '[rel=?]', 'nofollow'
+      assert_select '[onclick]', 0
+      assert_select '[href=?]', '/projects/1/issues.pdf?set_filter=1&sort=status&tracker_id=2'
+    end
+  end
+
   def test_index_should_not_warn_when_not_exceeding_export_limit
     with_settings :issues_export_limit => 200 do
       get :index
