@@ -98,6 +98,38 @@ class QueriesHelperTest < Redmine::HelperTest
     end
   end
 
+  def filename_for_content_disposition(name)
+    ApplicationController.new.send(:filename_for_content_disposition, name)
+  end
+
+  def test_query_to_csv_should_return_header_and_one_row_per_item
+    query = IssueQuery.new(:column_names => ['id', 'subject', 'status'])
+    items = Issue.visible.where(:id => [1, 2, 3]).order(:id).to_a
+    assert_equal 3, items.size
+
+    rows = CSV.parse(query_to_csv(items, query))
+
+    assert_equal query.columns.map {|c| c.caption.to_s}, rows.first
+    assert_equal items.size, rows.size - 1
+    items.each_with_index do |item, i|
+      assert_equal query.columns.map {|c| csv_content(c, item)}, rows[i + 1]
+    end
+  end
+
+  def test_filename_for_export_without_query_name
+    params[:query_name] = nil
+    query = IssueQuery.new
+
+    assert_equal 'issues', filename_for_export(query, 'issues')
+  end
+
+  def test_filename_for_export_with_query_name_param
+    params[:query_name] = 'My Query Name'
+    query = IssueQuery.new
+
+    assert_equal 'my_query_name', filename_for_export(query, 'issues')
+  end
+
   def test_filters_options_for_select_should_group_custom_field_relations
     i_cf = IssueCustomField.generate!(field_format: 'user', name: 'User', is_for_all: true, trackers: Tracker.all, is_filter: true)
     u_cf = UserCustomField.find(4)
