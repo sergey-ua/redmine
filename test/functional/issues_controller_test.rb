@@ -744,6 +744,39 @@ class IssuesControllerTest < Redmine::ControllerTest
     assert_select 'form#csv-export-form[action="/issues.csv"]'
   end
 
+  def test_index_other_formats_menu_should_list_csv_pdf_xlsx_and_atom_in_order
+    get :index
+    assert_response :success
+    assert_equal %w(csv pdf xlsx atom), css_select('p.other-formats a').map {|a| a.attr('class')}
+  end
+
+  def test_index_csv_and_pdf_export_links_should_be_unchanged_with_xlsx_link_present
+    get(
+      :index,
+      :params => {
+        :project_id => 1,
+        :set_filter => "1",
+        :tracker_id => "2",
+        :sort => 'status',
+        :page => 2
+      }
+    )
+    assert_response :success
+    assert_select 'p.other-formats a.xlsx'
+
+    assert_select 'p.other-formats a.csv', :text => 'CSV' do
+      assert_select '[rel=?]', 'nofollow'
+      assert_select '[onclick=?]', "showModal('csv-export-options', '350px'); return false;"
+      assert_select '[href=?]', '/projects/1/issues.csv?set_filter=1&sort=status&tracker_id=2'
+    end
+
+    assert_select 'p.other-formats a.pdf', :text => 'PDF' do
+      assert_select '[rel=?]', 'nofollow'
+      assert_select '[onclick]', 0
+      assert_select '[href=?]', '/projects/1/issues.pdf?set_filter=1&sort=status&tracker_id=2'
+    end
+  end
+
   def test_index_should_not_warn_when_not_exceeding_export_limit
     with_settings :issues_export_limit => 200 do
       get :index
@@ -1001,6 +1034,39 @@ class IssuesControllerTest < Redmine::ControllerTest
   def test_index_xlsx_with_invalid_query_should_return_422
     get(:index, :params => {:format => 'xlsx', :set_filter => 1, :f => ['status_id'], :op => {'status_id' => '='}, :v => {'status_id' => ['']}, :c => ['subject']})
     assert_response :unprocessable_content
+  end
+
+  def test_index_csv_and_pdf_spanning_subproject_without_permission_should_be_denied
+    project = Project.find(1)
+    subproject = Project.generate!(:parent => project)
+    no_export_role = Role.generate!(:permissions => [:view_issues])
+    Member.create!(:project => subproject, :principal => User.find(2), :roles => [no_export_role])
+    Issue.generate!(:project => subproject)
+    @request.session[:user_id] = 2
+
+    %w(csv pdf).each do |format|
+      get(:index, :params => {:project_id => project.id, :format => format})
+      assert_response :forbidden, "expected 403 for format #{format}"
+    end
+  end
+
+  def test_index_csv_and_pdf_without_export_permission_should_be_denied_like_xlsx
+    @request.session[:user_id] = 2
+    Role.find_by_name('Manager').remove_permission! :export_issues
+
+    %w(csv pdf xlsx).each do |format|
+      get(:index, :params => {:project_id => 1, :format => format})
+      assert_response :forbidden, "expected 403 for format #{format}"
+    end
+  end
+
+  def test_index_csv_and_pdf_with_invalid_query_should_return_422_with_xlsx_in_format_list
+    invalid_filters = {:set_filter => 1, :f => ['status_id'], :op => {'status_id' => '='}, :v => {'status_id' => ['']}, :c => ['subject']}
+
+    %w(csv pdf).each do |format|
+      get(:index, :params => invalid_filters.merge(:format => format))
+      assert_response :unprocessable_content, "expected 422 for format #{format}"
+    end
   end
 
   def test_index_csv_with_description
